@@ -1,11 +1,11 @@
 package crypto4go
 
 import (
-	"encoding/pem"
-	"crypto/x509"
-	"crypto/rsa"
-	"crypto/rand"
 	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 )
 
@@ -44,7 +44,7 @@ func RSAEncrypt(plaintext, key []byte) ([]byte, error) {
 	}
 	var pub = pubInterface.(*rsa.PublicKey)
 
-	var data = packageData(plaintext, pub.N.BitLen() / 8 - 11)
+	var data = packageData(plaintext, pub.N.BitLen()/8-11)
 	var cipherData []byte = make([]byte, 0, 0)
 
 	for _, d := range data {
@@ -72,7 +72,7 @@ func RSADecrypt(ciphertext, key []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	var data = packageData(ciphertext, pri.PublicKey.N.BitLen() / 8)
+	var data = packageData(ciphertext, pri.PublicKey.N.BitLen()/8)
 	var plainData []byte = make([]byte, 0, 0)
 
 	for _, d := range data {

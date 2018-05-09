@@ -3,17 +3,17 @@ package crypto4go
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
-	"hash"
 	"crypto/md5"
+	"crypto/rand"
 	"golang.org/x/crypto/pbkdf2"
+	"hash"
 )
 
 const (
-	K_PKCS5_SALT_LEN = 8
-	K_PKCS5_DEFAULT_ITER = 2048
+	K_PKCS5_SALT_LEN      = 8
+	K_PKCS5_DEFAULT_ITER  = 2048
 	K_PKCS5_DEFAULT_MAGIC = "Salted__"
-    K_EVP_MAX_IV_LENGTH = 16
+	K_EVP_MAX_IV_LENGTH   = 16
 )
 
 func randBytes(length int) (data []byte, err error) {
@@ -64,11 +64,11 @@ func AESDecryptWithSalt(ciphertext, key []byte, iterCount int, magic string, h f
 	//	return nil, errors.New("Error")
 	//}
 
-	var salt = ciphertext[len(magic):len(magic) + K_PKCS5_SALT_LEN]
+	var salt = ciphertext[len(magic) : len(magic)+K_PKCS5_SALT_LEN]
 	var sKey = pbkdf2.Key(key, salt, iterCount, len(key), h)
 	var sIV = pbkdf2.Key(sKey, salt, iterCount, K_EVP_MAX_IV_LENGTH, h)
 
-	dst, err = f(ciphertext[len(magic) + K_PKCS5_SALT_LEN:], sKey, sIV)
+	dst, err = f(ciphertext[len(magic)+K_PKCS5_SALT_LEN:], sKey, sIV)
 
 	return dst, err
 }
@@ -106,7 +106,6 @@ func AESCBCDecrypt(ciphertext, key, iv []byte) ([]byte, error) {
 	return dst, nil
 }
 
-
 func AESCFBEncrypt(plaintext, key, iv []byte) ([]byte, error) {
 	var block, err = aes.NewCipher(key)
 	if err != nil {
@@ -119,7 +118,7 @@ func AESCFBEncrypt(plaintext, key, iv []byte) ([]byte, error) {
 
 	var mode = cipher.NewCFBEncrypter(block, iv)
 	mode.XORKeyStream(dst, plaintext)
-	return dst,nil
+	return dst, nil
 }
 
 func AESCFBDecrypt(ciphertext, key, iv []byte) ([]byte, error) {
