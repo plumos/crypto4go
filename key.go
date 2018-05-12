@@ -1,4 +1,4 @@
-package encoding
+package crypto4go
 
 import (
 	"strings"
