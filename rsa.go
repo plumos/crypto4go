@@ -4,9 +4,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
 )
 
 func packageData(originalData []byte, packageSize int) (r [][]byte) {
@@ -30,19 +27,10 @@ func packageData(originalData []byte, packageSize int) (r [][]byte) {
 }
 
 func RSAEncrypt(plaintext, key []byte) ([]byte, error) {
-	var err error
-	var block *pem.Block
-	block, _ = pem.Decode(key)
-	if block == nil {
-		return nil, errors.New("public key error")
-	}
-
-	var pubInterface interface{}
-	pubInterface, err = x509.ParsePKIXPublicKey(block.Bytes)
+	pub, err := ParsePKCS1PublicKey(key)
 	if err != nil {
 		return nil, err
 	}
-	var pub = pubInterface.(*rsa.PublicKey)
 
 	var data = packageData(plaintext, pub.N.BitLen()/8-11)
 	var cipherData = make([]byte, 0, 0)
@@ -59,15 +47,7 @@ func RSAEncrypt(plaintext, key []byte) ([]byte, error) {
 }
 
 func RSADecrypt(ciphertext, key []byte) ([]byte, error) {
-	var err error
-	var block *pem.Block
-	block, _ = pem.Decode(key)
-	if block == nil {
-		return nil, errors.New("private key error")
-	}
-
-	var pri *rsa.PrivateKey
-	pri, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	pri, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -86,43 +66,27 @@ func RSADecrypt(ciphertext, key []byte) ([]byte, error) {
 }
 
 func SignPKCS1v15(src, key []byte, hash crypto.Hash) ([]byte, error) {
+	pri, err := ParsePKCS1PrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
 	var h = hash.New()
 	h.Write(src)
 	var hashed = h.Sum(nil)
 
-	var err error
-	var block *pem.Block
-	block, _ = pem.Decode(key)
-	if block == nil {
-		return nil, errors.New("private key error")
-	}
-
-	var pri *rsa.PrivateKey
-	pri, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
 	return rsa.SignPKCS1v15(rand.Reader, pri, hash, hashed)
 }
 
 func VerifyPKCS1v15(src, sig, key []byte, hash crypto.Hash) error {
-	var h = hash.New()
-	h.Write(src)
-	var hashed = h.Sum(nil)
-
-	var err error
-	var block *pem.Block
-	block, _ = pem.Decode(key)
-	if block == nil {
-		return errors.New("public key error")
-	}
-
-	var pubInterface interface{}
-	pubInterface, err = x509.ParsePKIXPublicKey(block.Bytes)
+	pub, err := ParsePKCS1PublicKey(key)
 	if err != nil {
 		return err
 	}
-	var pub = pubInterface.(*rsa.PublicKey)
+
+	var h = hash.New()
+	h.Write(src)
+	var hashed = h.Sum(nil)
 
 	return rsa.VerifyPKCS1v15(pub, hash, hashed, sig)
 }
