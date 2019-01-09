@@ -7,7 +7,7 @@ import (
 )
 
 func TestRSAEncrypt(t *testing.T) {
-	var key = []byte(`-----BEGIN PUBLIC KEY-----
+	var pub = []byte(`-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDZ8lmnG4TMFqJty0FoqAHKxEIs
 IcZaM2E8PXjXoQ+iszREsqi1B5Lmq7GeJ1/9N+OGDIjpDHnEfMMlHrj+5gYSTPab
 bLGCvtcluPbI6R+uJz3uYGtPzqn4EKiNvC1ixANLmbhdqbb3KAkCcRltZOZYSerG
@@ -30,7 +30,7 @@ Ladav1OmihToW74T/vyTYQJAAf+PKLRD+O2CuwcZJG0taEqL0RR+kXMEd0wLp4EN
 pFwKUHMh+rm4/Asgy126+rS6Hr0QuNuoJuQbAr3Q28h7PQ==
 -----END RSA PRIVATE KEY-----`)
 
-	var c, _ = RSAEncrypt([]byte("Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state."), key)
+	var c, _ = RSAEncrypt([]byte("Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state."), pub)
 	fmt.Println(hex.EncodeToString(c))
 
 	var p, _ = RSADecrypt(c, pri)

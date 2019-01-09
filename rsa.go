@@ -46,6 +46,21 @@ func RSAEncrypt(plaintext, key []byte) ([]byte, error) {
 	return cipherData, nil
 }
 
+func RSAEncryptWithKey(plaintext []byte, key *rsa.PublicKey) ([]byte, error) {
+	var data = packageData(plaintext, key.N.BitLen()/8-11)
+	var cipherData = make([]byte, 0, 0)
+
+	for _, d := range data {
+		var c, e = rsa.EncryptPKCS1v15(rand.Reader, key, d)
+		if e != nil {
+			return nil, e
+		}
+		cipherData = append(cipherData, c...)
+	}
+
+	return cipherData, nil
+}
+
 func RSADecrypt(ciphertext, key []byte) ([]byte, error) {
 	pri, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
@@ -65,17 +80,33 @@ func RSADecrypt(ciphertext, key []byte) ([]byte, error) {
 	return plainData, nil
 }
 
+func RSADecryptWithKey(ciphertext []byte, key *rsa.PrivateKey) ([]byte, error) {
+	var data = packageData(ciphertext, key.PublicKey.N.BitLen()/8)
+	var plainData = make([]byte, 0, 0)
+
+	for _, d := range data {
+		var p, e = rsa.DecryptPKCS1v15(rand.Reader, key, d)
+		if e != nil {
+			return nil, e
+		}
+		plainData = append(plainData, p...)
+	}
+	return plainData, nil
+}
+
 func SignPKCS1v15(src, key []byte, hash crypto.Hash) ([]byte, error) {
 	pri, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
+	return SignPKCS1v15WithKey(src, pri, hash)
+}
 
+func SignPKCS1v15WithKey(src []byte, key *rsa.PrivateKey, hash crypto.Hash) ([]byte, error) {
 	var h = hash.New()
 	h.Write(src)
 	var hashed = h.Sum(nil)
-
-	return rsa.SignPKCS1v15(rand.Reader, pri, hash, hashed)
+	return rsa.SignPKCS1v15(rand.Reader, key, hash, hashed)
 }
 
 func VerifyPKCS1v15(src, sig, key []byte, hash crypto.Hash) error {
@@ -83,10 +114,12 @@ func VerifyPKCS1v15(src, sig, key []byte, hash crypto.Hash) error {
 	if err != nil {
 		return err
 	}
+	return VerifyPKCS1v15WithKey(src, sig, pub, hash)
+}
 
+func VerifyPKCS1v15WithKey(src, sig []byte, key *rsa.PublicKey, hash crypto.Hash) error {
 	var h = hash.New()
 	h.Write(src)
 	var hashed = h.Sum(nil)
-
-	return rsa.VerifyPKCS1v15(pub, hash, hashed, sig)
+	return rsa.VerifyPKCS1v15(key, hash, hashed, sig)
 }
