@@ -4,7 +4,93 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 )
+
+const (
+	kPublicKeyPrefix = "-----BEGIN PUBLIC KEY-----"
+	kPublicKeySuffix = "-----END PUBLIC KEY-----"
+
+	kPKCS1Prefix = "-----BEGIN RSA PRIVATE KEY-----"
+	KPKCS1Suffix = "-----END RSA PRIVATE KEY-----"
+
+	kPKCS8Prefix = "-----BEGIN PRIVATE KEY-----"
+	KPKCS8Suffix = "-----END PRIVATE KEY-----"
+)
+
+var (
+	ErrPrivateKeyFailedToLoad = errors.New("crypto4go: private key failed to load")
+	ErrPublicKeyFailedToLoad  = errors.New("crypto4go: public key failed to load")
+)
+
+func FormatPublicKey(raw string) []byte {
+	return formatKey(raw, kPublicKeyPrefix, kPublicKeySuffix, 64)
+}
+
+func FormatPKCS1PrivateKey(raw string) []byte {
+	return formatKey(raw, kPKCS1Prefix, KPKCS1Suffix, 64)
+}
+
+func FormatPKCS8PrivateKey(raw string) []byte {
+	return formatKey(raw, kPKCS8Prefix, KPKCS8Suffix, 64)
+}
+
+func ParsePKCS1PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
+	var block *pem.Block
+	block, _ = pem.Decode(data)
+	if block == nil {
+		return nil, ErrPrivateKeyFailedToLoad
+	}
+
+	key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return key, err
+}
+
+func ParsePKCS8PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
+	var block *pem.Block
+	block, _ = pem.Decode(data)
+	if block == nil {
+		return nil, ErrPrivateKeyFailedToLoad
+	}
+
+	rawKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	key, ok := rawKey.(*rsa.PrivateKey)
+	if ok == false {
+		return nil, ErrPrivateKeyFailedToLoad
+	}
+
+	return key, err
+}
+
+func ParsePublicKey(data []byte) (key *rsa.PublicKey, err error) {
+	var block *pem.Block
+	block, _ = pem.Decode(data)
+	if block == nil {
+		return nil, ErrPublicKeyFailedToLoad
+	}
+
+	var pubInterface interface{}
+	pubInterface, err = x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	key, ok := pubInterface.(*rsa.PublicKey)
+	if !ok {
+		return nil, ErrPublicKeyFailedToLoad
+	}
+
+	return key, err
+}
 
 func packageData(originalData []byte, packageSize int) (r [][]byte) {
 	var src = make([]byte, len(originalData))
