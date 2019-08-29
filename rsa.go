@@ -26,62 +26,55 @@ func packageData(originalData []byte, packageSize int) (r [][]byte) {
 	return r
 }
 
-func RSAEncryptPKCS1(plaintext, key []byte) ([]byte, error) {
-	pub, err := ParsePKCS1PublicKey(key)
+// RSAEncrypt 使用公钥 key 对数据 src 进行 RSA 加密
+func RSAEncrypt(src, key []byte) ([]byte, error) {
+	pub, err := ParsePublicKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	var data = packageData(plaintext, pub.N.BitLen()/8-11)
-	var cipherData = make([]byte, 0, 0)
-
-	for _, d := range data {
-		var c, e = rsa.EncryptPKCS1v15(rand.Reader, pub, d)
-		if e != nil {
-			return nil, e
-		}
-		cipherData = append(cipherData, c...)
-	}
-
-	return cipherData, nil
+	return RSAEncryptWithKey(src, pub)
 }
 
-func RSAEncryptPKCS1WithKey(plaintext []byte, key *rsa.PublicKey) ([]byte, error) {
-	var data = packageData(plaintext, key.N.BitLen()/8-11)
-	var cipherData = make([]byte, 0, 0)
+// RSAEncryptWithKey 使用公钥 key 对数据 src 进行 RSA 加密
+func RSAEncryptWithKey(src []byte, key *rsa.PublicKey) ([]byte, error) {
+	var data = packageData(src, key.N.BitLen()/8-11)
+	var cipher = make([]byte, 0, 0)
 
 	for _, d := range data {
 		var c, e = rsa.EncryptPKCS1v15(rand.Reader, key, d)
 		if e != nil {
 			return nil, e
 		}
-		cipherData = append(cipherData, c...)
+		cipher = append(cipher, c...)
 	}
 
-	return cipherData, nil
+	return cipher, nil
 }
 
-func RSADecryptPKCS1(ciphertext, key []byte) ([]byte, error) {
+// RSADecryptWithPKCS1 使用私钥 key 对数据 cipher 进行 RSA 解密，key 的格式为 pkcs1
+func RSADecryptWithPKCS1(cipher, key []byte) ([]byte, error) {
 	pri, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	var data = packageData(ciphertext, pri.PublicKey.N.BitLen()/8)
-	var plainData = make([]byte, 0, 0)
-
-	for _, d := range data {
-		var p, e = rsa.DecryptPKCS1v15(rand.Reader, pri, d)
-		if e != nil {
-			return nil, e
-		}
-		plainData = append(plainData, p...)
-	}
-	return plainData, nil
+	return RSADecryptWithKey(cipher, pri)
 }
 
-func RSADecryptPKCS1WithKey(ciphertext []byte, key *rsa.PrivateKey) ([]byte, error) {
-	var data = packageData(ciphertext, key.PublicKey.N.BitLen()/8)
+// RSADecryptWithPKCS1 使用私钥 key 对数据 cipher 进行 RSA 解密，key 的格式为 pkcs8
+func RSADecryptWithPKCS8(cipher, key []byte) ([]byte, error) {
+	pri, err := ParsePKCS8PrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return RSADecryptWithKey(cipher, pri)
+}
+
+// RSADecryptWithKey 使用私钥 key 对数据 cipher 进行 RSA 解密
+func RSADecryptWithKey(cipher []byte, key *rsa.PrivateKey) ([]byte, error) {
+	var data = packageData(cipher, key.PublicKey.N.BitLen()/8)
 	var plainData = make([]byte, 0, 0)
 
 	for _, d := range data {
@@ -94,30 +87,38 @@ func RSADecryptPKCS1WithKey(ciphertext []byte, key *rsa.PrivateKey) ([]byte, err
 	return plainData, nil
 }
 
-func SignPKCS1v15(src, key []byte, hash crypto.Hash) ([]byte, error) {
+func RSASignWithPKCS1(src, key []byte, hash crypto.Hash) ([]byte, error) {
 	pri, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
-	return SignPKCS1v15WithKey(src, pri, hash)
+	return RSASignWithKey(src, pri, hash)
 }
 
-func SignPKCS1v15WithKey(src []byte, key *rsa.PrivateKey, hash crypto.Hash) ([]byte, error) {
+func RSASignWithPKCS8(src, key []byte, hash crypto.Hash) ([]byte, error) {
+	pri, err := ParsePKCS8PrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+	return RSASignWithKey(src, pri, hash)
+}
+
+func RSASignWithKey(src []byte, key *rsa.PrivateKey, hash crypto.Hash) ([]byte, error) {
 	var h = hash.New()
 	h.Write(src)
 	var hashed = h.Sum(nil)
 	return rsa.SignPKCS1v15(rand.Reader, key, hash, hashed)
 }
 
-func VerifyPKCS1v15(src, sig, key []byte, hash crypto.Hash) error {
-	pub, err := ParsePKCS1PublicKey(key)
+func RSAVerify(src, sig, key []byte, hash crypto.Hash) error {
+	pub, err := ParsePublicKey(key)
 	if err != nil {
 		return err
 	}
-	return VerifyPKCS1v15WithKey(src, sig, pub, hash)
+	return RSAVerifyWithKey(src, sig, pub, hash)
 }
 
-func VerifyPKCS1v15WithKey(src, sig []byte, key *rsa.PublicKey, hash crypto.Hash) error {
+func RSAVerifyWithKey(src, sig []byte, key *rsa.PublicKey, hash crypto.Hash) error {
 	var h = hash.New()
 	h.Write(src)
 	var hashed = h.Sum(nil)

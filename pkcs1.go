@@ -22,7 +22,27 @@ func ParsePKCS1PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
 	return key, err
 }
 
-func ParsePKCS1PublicKey(data []byte) (key *rsa.PublicKey, err error) {
+func ParsePKCS8PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
+	var block *pem.Block
+	block, _ = pem.Decode(data)
+	if block == nil {
+		return nil, errors.New("private key error")
+	}
+
+	rawKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	key, ok := rawKey.(*rsa.PrivateKey)
+	if ok == false {
+		return nil, errors.New("private key error")
+	}
+
+	return key, err
+}
+
+func ParsePublicKey(data []byte) (key *rsa.PublicKey, err error) {
 	var block *pem.Block
 	block, _ = pem.Decode(data)
 	if block == nil {

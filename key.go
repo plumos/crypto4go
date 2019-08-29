@@ -5,20 +5,37 @@ import (
 	"strings"
 )
 
-func FormatPublicKey(raw string) (result []byte) {
-	return formatKey(raw, "-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----")
+const (
+	kPublicKeyPrefix = "-----BEGIN PUBLIC KEY-----"
+	kPublicKeySuffix = "-----END PUBLIC KEY-----"
+
+	kPKCS1Prefix = "-----BEGIN RSA PRIVATE KEY-----"
+	KPKCS1Suffix = "-----END RSA PRIVATE KEY-----"
+
+	kPKCS8Prefix = "-----BEGIN PRIVATE KEY-----"
+	KPKCS8Suffix = "-----END PRIVATE KEY-----"
+)
+
+func FormatPublicKey(raw string) []byte {
+	return formatKey(raw, kPublicKeyPrefix, kPublicKeySuffix)
 }
 
-func FormatPrivateKey(raw string) (result []byte) {
-	return formatKey(raw, "-----BEGIN RSA PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----")
+func FormatPKCS1PrivateKey(raw string) []byte {
+	return formatKey(raw, kPKCS1Prefix, KPKCS1Suffix)
 }
 
-func formatKey(raw, prefix, suffix string) (result []byte) {
+func FormatPKCS8PrivateKey(raw string) []byte {
+	return formatKey(raw, kPKCS8Prefix, KPKCS8Suffix)
+}
+
+func formatKey(raw, prefix, suffix string) []byte {
 	if raw == "" {
 		return nil
 	}
-	raw = strings.Replace(raw, prefix, "", 1)
-	raw = strings.Replace(raw, suffix, "", 1)
+	raw = strings.Replace(raw, kPKCS1Prefix, "", 1)
+	raw = strings.Replace(raw, KPKCS1Suffix, "", 1)
+	raw = strings.Replace(raw, kPKCS8Prefix, "", 1)
+	raw = strings.Replace(raw, KPKCS8Suffix, "", 1)
 	raw = strings.Replace(raw, " ", "", -1)
 	raw = strings.Replace(raw, "\n", "", -1)
 	raw = strings.Replace(raw, "\r", "", -1)

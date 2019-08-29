@@ -30,9 +30,9 @@ Ladav1OmihToW74T/vyTYQJAAf+PKLRD+O2CuwcZJG0taEqL0RR+kXMEd0wLp4EN
 pFwKUHMh+rm4/Asgy126+rS6Hr0QuNuoJuQbAr3Q28h7PQ==
 -----END RSA PRIVATE KEY-----`)
 
-	var c, _ = RSAEncryptPKCS1([]byte("Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state."), pub)
+	var c, _ = RSAEncrypt([]byte("Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state."), pub)
 	fmt.Println(hex.EncodeToString(c))
 
-	var p, _ = RSADecryptPKCS1(c, pri)
+	var p, _ = RSADecryptWithPKCS1(c, pri)
 	fmt.Println(string(p))
 }
