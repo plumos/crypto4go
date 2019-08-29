@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"strings"
 )
 
 const (
@@ -30,10 +31,14 @@ func FormatPublicKey(raw string) []byte {
 }
 
 func FormatPKCS1PrivateKey(raw string) []byte {
+	raw = strings.Replace(raw, kPKCS8Prefix, "", 1)
+	raw = strings.Replace(raw, KPKCS8Suffix, "", 1)
 	return formatKey(raw, kPKCS1Prefix, KPKCS1Suffix, 64)
 }
 
 func FormatPKCS8PrivateKey(raw string) []byte {
+	raw = strings.Replace(raw, kPKCS1Prefix, "", 1)
+	raw = strings.Replace(raw, KPKCS1Suffix, "", 1)
 	return formatKey(raw, kPKCS8Prefix, KPKCS8Suffix, 64)
 }
 

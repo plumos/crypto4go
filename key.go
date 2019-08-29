@@ -9,10 +9,8 @@ func formatKey(raw, prefix, suffix string, lineCount int) []byte {
 	if raw == "" {
 		return nil
 	}
-	raw = strings.Replace(raw, kPKCS1Prefix, "", 1)
-	raw = strings.Replace(raw, KPKCS1Suffix, "", 1)
-	raw = strings.Replace(raw, kPKCS8Prefix, "", 1)
-	raw = strings.Replace(raw, KPKCS8Suffix, "", 1)
+	raw = strings.Replace(raw, prefix, "", 1)
+	raw = strings.Replace(raw, suffix, "", 1)
 	raw = strings.Replace(raw, " ", "", -1)
 	raw = strings.Replace(raw, "\n", "", -1)
 	raw = strings.Replace(raw, "\r", "", -1)

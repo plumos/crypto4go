@@ -22,7 +22,7 @@ func FormatCertificate(raw string) []byte {
 func ParseCertificate(b []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(b)
 	if block == nil {
-		return nil, nil
+		return nil, ErrCertificateFailedToLoad
 	}
 	csr, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
