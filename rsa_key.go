@@ -20,6 +20,11 @@ const (
 	KPKCS8Suffix = "-----END PRIVATE KEY-----"
 )
 
+var (
+	ErrPrivateKeyError = errors.New("crypto4go: private key error")
+	ErrPublicKeyError  = errors.New("crypto4go: public key error")
+)
+
 func FormatPublicKey(raw string) []byte {
 	return formatKey(raw, kPublicKeyPrefix, kPublicKeySuffix)
 }
@@ -72,7 +77,7 @@ func ParsePKCS1PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
 	var block *pem.Block
 	block, _ = pem.Decode(data)
 	if block == nil {
-		return nil, errors.New("private key error")
+		return nil, ErrPrivateKeyError
 	}
 
 	key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -87,7 +92,7 @@ func ParsePKCS8PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
 	var block *pem.Block
 	block, _ = pem.Decode(data)
 	if block == nil {
-		return nil, errors.New("private key error")
+		return nil, ErrPrivateKeyError
 	}
 
 	rawKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
@@ -97,7 +102,7 @@ func ParsePKCS8PrivateKey(data []byte) (key *rsa.PrivateKey, err error) {
 
 	key, ok := rawKey.(*rsa.PrivateKey)
 	if ok == false {
-		return nil, errors.New("private key error")
+		return nil, ErrPrivateKeyError
 	}
 
 	return key, err
@@ -107,7 +112,7 @@ func ParsePublicKey(data []byte) (key *rsa.PublicKey, err error) {
 	var block *pem.Block
 	block, _ = pem.Decode(data)
 	if block == nil {
-		return nil, errors.New("public key error")
+		return nil, ErrPublicKeyError
 	}
 
 	var pubInterface interface{}
@@ -117,7 +122,7 @@ func ParsePublicKey(data []byte) (key *rsa.PublicKey, err error) {
 	}
 	key, ok := pubInterface.(*rsa.PublicKey)
 	if !ok {
-		return nil, errors.New("public key error")
+		return nil, ErrPublicKeyError
 	}
 
 	return key, err
