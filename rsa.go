@@ -166,16 +166,16 @@ func RSADecryptWithPKCS8(cipher, key []byte) ([]byte, error) {
 // RSADecryptWithKey 使用私钥 key 对数据 cipher 进行 RSA 解密
 func RSADecryptWithKey(cipher []byte, key *rsa.PrivateKey) ([]byte, error) {
 	var data = packageData(cipher, key.PublicKey.N.BitLen()/8)
-	var plainData = make([]byte, 0, 0)
+	var plain = make([]byte, 0, 0)
 
 	for _, d := range data {
 		var p, e = rsa.DecryptPKCS1v15(rand.Reader, key, d)
 		if e != nil {
 			return nil, e
 		}
-		plainData = append(plainData, p...)
+		plain = append(plain, p...)
 	}
-	return plainData, nil
+	return plain, nil
 }
 
 func RSASignWithPKCS1(src, key []byte, hash crypto.Hash) ([]byte, error) {
