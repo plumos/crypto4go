@@ -9,42 +9,42 @@ import (
 	"encoding/hex"
 )
 
-func HmacMD5(plaintext, key []byte) []byte {
+func HmacMD5(data, key []byte) []byte {
 	var h = hmac.New(md5.New, key)
-	h.Write(plaintext)
+	h.Write(data)
 	return h.Sum(nil)
 }
 
-func HmacMD5String(plaintext, key string) string {
-	return hex.EncodeToString(HmacMD5([]byte(plaintext), []byte(key)))
+func HmacMD5String(data, key string) string {
+	return hex.EncodeToString(HmacMD5([]byte(data), []byte(key)))
 }
 
-func HmacSHA1(plaintext, key []byte) []byte {
+func HmacSHA1(data, key []byte) []byte {
 	var h = hmac.New(sha1.New, key)
-	h.Write(plaintext)
+	h.Write(data)
 	return h.Sum(nil)
 }
 
-func HmacSHA1String(plaintext, key string) string {
-	return hex.EncodeToString(HmacSHA1([]byte(plaintext), []byte(key)))
+func HmacSHA1String(data, key string) string {
+	return hex.EncodeToString(HmacSHA1([]byte(data), []byte(key)))
 }
 
-func HmacSHA256(plaintext, key []byte) []byte {
+func HmacSHA256(data, key []byte) []byte {
 	var h = hmac.New(sha256.New, key)
-	h.Write(plaintext)
+	h.Write(data)
 	return h.Sum(nil)
 }
 
-func HmacSHA256String(plaintext, key string) string {
-	return hex.EncodeToString(HmacSHA256([]byte(plaintext), []byte(key)))
+func HmacSHA256String(data, key string) string {
+	return hex.EncodeToString(HmacSHA256([]byte(data), []byte(key)))
 }
 
-func HmacSHA512(plaintext, key []byte) []byte {
+func HmacSHA512(data, key []byte) []byte {
 	var h = hmac.New(sha512.New, key)
-	h.Write(plaintext)
+	h.Write(data)
 	return h.Sum(nil)
 }
 
-func HmacSHA512String(plaintext, key string) string {
-	return hex.EncodeToString(HmacSHA512([]byte(plaintext), []byte(key)))
+func HmacSHA512String(data, key string) string {
+	return hex.EncodeToString(HmacSHA512([]byte(data), []byte(key)))
 }

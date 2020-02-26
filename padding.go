@@ -4,20 +4,20 @@ import (
 	"bytes"
 )
 
-func ZeroPadding(text []byte, blockSize int) []byte {
-	var diff = blockSize - len(text)%blockSize
+func ZeroPadding(data []byte, blockSize int) []byte {
+	var diff = blockSize - len(data)%blockSize
 	var paddingText = bytes.Repeat([]byte{0}, diff)
-	return append(text, paddingText...)
+	return append(data, paddingText...)
 }
 
-func PKCS7Padding(text []byte, blockSize int) []byte {
-	var diff = blockSize - len(text)%blockSize
+func PKCS7Padding(data []byte, blockSize int) []byte {
+	var diff = blockSize - len(data)%blockSize
 	var paddingText = bytes.Repeat([]byte{byte(diff)}, diff)
-	return append(text, paddingText...)
+	return append(data, paddingText...)
 }
 
-func PKCS7UnPadding(text []byte) []byte {
-	var length = len(text)
-	var unpadding = int(text[length-1])
-	return text[:(length - unpadding)]
+func PKCS7UnPadding(data []byte) []byte {
+	var length = len(data)
+	var unpadding = int(data[length-1])
+	return data[:(length - unpadding)]
 }

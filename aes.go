@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	K_PKCS5_SALT_LEN      = 8
-	K_PKCS5_DEFAULT_ITER  = 2048
-	K_PKCS5_DEFAULT_MAGIC = "Salted__"
-	K_EVP_MAX_IV_LENGTH   = 16
+	kPKCS5SaltLen      = 8
+	kPKCS5DefaultIter  = 2048
+	kPKCS5DefaultMagic = "Salted__"
+	kEVPMaxIvLen       = 16
 )
 
 func randBytes(length int) (data []byte, err error) {
@@ -22,28 +22,28 @@ func randBytes(length int) (data []byte, err error) {
 	return data, err
 }
 
-func AESCBCEncryptWithSalt(plaintext, key []byte, iterCount int, magic string, h func() hash.Hash) ([]byte, error) {
-	return AESEncryptWithSalt(plaintext, key, iterCount, magic, h, AESCBCEncrypt)
+func AESCBCEncryptWithSalt(data, key []byte, iterCount int, magic string, h func() hash.Hash) ([]byte, error) {
+	return AESEncryptWithSalt(data, key, iterCount, magic, h, AESCBCEncrypt)
 }
 
-func AESCBCDecryptWithSalt(ciphertext, key []byte, iterCount int, magic string, h func() hash.Hash) ([]byte, error) {
-	return AESDecryptWithSalt(ciphertext, key, iterCount, magic, h, AESCBCDecrypt)
+func AESCBCDecryptWithSalt(data, key []byte, iterCount int, magic string, h func() hash.Hash) ([]byte, error) {
+	return AESDecryptWithSalt(data, key, iterCount, magic, h, AESCBCDecrypt)
 }
 
-func AESEncryptWithSalt(plaintext, key []byte, iterCount int, magic string, h func() hash.Hash, f func(plaintext, key, iv []byte) (dst []byte, err error)) (dst []byte, err error) {
+func AESEncryptWithSalt(data, key []byte, iterCount int, magic string, h func() hash.Hash, f func(data, key, iv []byte) (dst []byte, err error)) (dst []byte, err error) {
 	if iterCount <= 0 {
-		iterCount = K_PKCS5_DEFAULT_ITER
+		iterCount = kPKCS5DefaultIter
 	}
 
 	if h == nil {
 		h = md5.New
 	}
 
-	var salt, _ = randBytes(K_PKCS5_SALT_LEN)
+	var salt, _ = randBytes(kPKCS5SaltLen)
 	var sKey = pbkdf2.Key(key, salt, iterCount, len(key), h)
-	var sIV = pbkdf2.Key(sKey, salt, iterCount, K_EVP_MAX_IV_LENGTH, h)
+	var sIV = pbkdf2.Key(sKey, salt, iterCount, kEVPMaxIvLen, h)
 
-	dst, err = f(plaintext, sKey, sIV)
+	dst, err = f(data, sKey, sIV)
 
 	dst = append(salt, dst...)
 	dst = append([]byte(magic), dst...)
@@ -51,30 +51,30 @@ func AESEncryptWithSalt(plaintext, key []byte, iterCount int, magic string, h fu
 	return dst, err
 }
 
-func AESDecryptWithSalt(ciphertext, key []byte, iterCount int, magic string, h func() hash.Hash, f func(ciphertext, key, iv []byte) ([]byte, error)) (dst []byte, err error) {
+func AESDecryptWithSalt(data, key []byte, iterCount int, magic string, h func() hash.Hash, f func(ciphertext, key, iv []byte) ([]byte, error)) (dst []byte, err error) {
 	if iterCount <= 0 {
-		iterCount = K_PKCS5_DEFAULT_ITER
+		iterCount = kPKCS5DefaultIter
 	}
 
 	if h == nil {
 		h = md5.New
 	}
 
-	//if len(ciphertext) <= len(magic) + K_PKCS5_SALT_LEN {
+	//if len(data) <= len(magic) + kPKCS5SaltLen {
 	//	return nil, errors.New("Error")
 	//}
 
-	var salt = ciphertext[len(magic) : len(magic)+K_PKCS5_SALT_LEN]
+	var salt = data[len(magic) : len(magic)+kPKCS5SaltLen]
 	var sKey = pbkdf2.Key(key, salt, iterCount, len(key), h)
-	var sIV = pbkdf2.Key(sKey, salt, iterCount, K_EVP_MAX_IV_LENGTH, h)
+	var sIV = pbkdf2.Key(sKey, salt, iterCount, kEVPMaxIvLen, h)
 
-	dst, err = f(ciphertext[len(magic)+K_PKCS5_SALT_LEN:], sKey, sIV)
+	dst, err = f(data[len(magic)+kPKCS5SaltLen:], sKey, sIV)
 
 	return dst, err
 }
 
 // AESCBCEncrypt 由key的长度决定是128, 192 还是 256
-func AESCBCEncrypt(plaintext, key, iv []byte) ([]byte, error) {
+func AESCBCEncrypt(data, key, iv []byte) ([]byte, error) {
 	var block, err = aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func AESCBCEncrypt(plaintext, key, iv []byte) ([]byte, error) {
 	var blockSize = block.BlockSize()
 	iv = iv[:blockSize]
 
-	var src = PKCS7Padding(plaintext, blockSize)
+	var src = PKCS7Padding(data, blockSize)
 	var dst = make([]byte, len(src))
 
 	var mode = cipher.NewCBCEncrypter(block, iv)
@@ -90,7 +90,7 @@ func AESCBCEncrypt(plaintext, key, iv []byte) ([]byte, error) {
 	return dst, nil
 }
 
-func AESCBCDecrypt(ciphertext, key, iv []byte) ([]byte, error) {
+func AESCBCDecrypt(data, key, iv []byte) ([]byte, error) {
 	var block, err = aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -98,15 +98,15 @@ func AESCBCDecrypt(ciphertext, key, iv []byte) ([]byte, error) {
 	var blockSize = block.BlockSize()
 	iv = iv[:blockSize]
 
-	var dst = make([]byte, len(ciphertext))
+	var dst = make([]byte, len(data))
 
 	var mode = cipher.NewCBCDecrypter(block, iv)
-	mode.CryptBlocks(dst, ciphertext)
+	mode.CryptBlocks(dst, data)
 	dst = PKCS7UnPadding(dst)
 	return dst, nil
 }
 
-func AESCFBEncrypt(plaintext, key, iv []byte) ([]byte, error) {
+func AESCFBEncrypt(data, key, iv []byte) ([]byte, error) {
 	var block, err = aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -114,14 +114,14 @@ func AESCFBEncrypt(plaintext, key, iv []byte) ([]byte, error) {
 	var blockSize = block.BlockSize()
 	iv = iv[:blockSize]
 
-	var dst = make([]byte, len(plaintext))
+	var dst = make([]byte, len(data))
 
 	var mode = cipher.NewCFBEncrypter(block, iv)
-	mode.XORKeyStream(dst, plaintext)
+	mode.XORKeyStream(dst, data)
 	return dst, nil
 }
 
-func AESCFBDecrypt(ciphertext, key, iv []byte) ([]byte, error) {
+func AESCFBDecrypt(data, key, iv []byte) ([]byte, error) {
 	var block, err = aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -129,9 +129,9 @@ func AESCFBDecrypt(ciphertext, key, iv []byte) ([]byte, error) {
 	var blockSize = block.BlockSize()
 	iv = iv[:blockSize]
 
-	var dst = make([]byte, len(ciphertext))
+	var dst = make([]byte, len(data))
 
 	var mode = cipher.NewCFBDecrypter(block, iv)
-	mode.XORKeyStream(dst, ciphertext)
+	mode.XORKeyStream(dst, data)
 	return dst, nil
 }
