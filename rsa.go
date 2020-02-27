@@ -1,6 +1,7 @@
 package crypto4go
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -19,6 +20,10 @@ const (
 
 	kPKCS8Prefix = "-----BEGIN PRIVATE KEY-----"
 	KPKCS8Suffix = "-----END PRIVATE KEY-----"
+
+	kPublicKeyType     = "PUBLIC KEY"
+	kPrivateKeyType    = "PRIVATE KEY"
+	kRSAPrivateKeyType = "RSA PRIVATE KEY"
 )
 
 var (
@@ -119,12 +124,12 @@ func packageData(data []byte, packageSize int) (r [][]byte) {
 
 // RSAEncrypt 使用公钥 key 对数据 data 进行 RSA 加密
 func RSAEncrypt(data, key []byte) ([]byte, error) {
-	pub, err := ParsePublicKey(key)
+	pubKey, err := ParsePublicKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	return RSAEncryptWithKey(data, pub)
+	return RSAEncryptWithKey(data, pubKey)
 }
 
 // RSAEncryptWithKey 使用公钥 key 对数据 data 进行 RSA 加密
@@ -145,22 +150,22 @@ func RSAEncryptWithKey(data []byte, key *rsa.PublicKey) ([]byte, error) {
 
 // RSADecryptWithPKCS1 使用私钥 key 对数据 data 进行 RSA 解密，key 的格式为 pkcs1
 func RSADecryptWithPKCS1(data, key []byte) ([]byte, error) {
-	pri, err := ParsePKCS1PrivateKey(key)
+	priKey, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	return RSADecryptWithKey(data, pri)
+	return RSADecryptWithKey(data, priKey)
 }
 
 // RSADecryptWithPKCS1 使用私钥 key 对数据 data 进行 RSA 解密，key 的格式为 pkcs8
 func RSADecryptWithPKCS8(data, key []byte) ([]byte, error) {
-	pri, err := ParsePKCS8PrivateKey(key)
+	priKey, err := ParsePKCS8PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	return RSADecryptWithKey(data, pri)
+	return RSADecryptWithKey(data, priKey)
 }
 
 // RSADecryptWithKey 使用私钥 key 对数据 data 进行 RSA 解密
@@ -179,19 +184,19 @@ func RSADecryptWithKey(data []byte, key *rsa.PrivateKey) ([]byte, error) {
 }
 
 func RSASignWithPKCS1(data, key []byte, hash crypto.Hash) ([]byte, error) {
-	pri, err := ParsePKCS1PrivateKey(key)
+	priKey, err := ParsePKCS1PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
-	return RSASignWithKey(data, pri, hash)
+	return RSASignWithKey(data, priKey, hash)
 }
 
 func RSASignWithPKCS8(data, key []byte, hash crypto.Hash) ([]byte, error) {
-	pri, err := ParsePKCS8PrivateKey(key)
+	priKey, err := ParsePKCS8PrivateKey(key)
 	if err != nil {
 		return nil, err
 	}
-	return RSASignWithKey(data, pri, hash)
+	return RSASignWithKey(data, priKey, hash)
 }
 
 func RSASignWithKey(data []byte, key *rsa.PrivateKey, hash crypto.Hash) ([]byte, error) {
@@ -202,11 +207,11 @@ func RSASignWithKey(data []byte, key *rsa.PrivateKey, hash crypto.Hash) ([]byte,
 }
 
 func RSAVerify(data, sig, key []byte, hash crypto.Hash) error {
-	pub, err := ParsePublicKey(key)
+	pubKey, err := ParsePublicKey(key)
 	if err != nil {
 		return err
 	}
-	return RSAVerifyWithKey(data, sig, pub, hash)
+	return RSAVerifyWithKey(data, sig, pubKey, hash)
 }
 
 func RSAVerifyWithKey(data, sig []byte, key *rsa.PublicKey, hash crypto.Hash) error {
@@ -214,4 +219,65 @@ func RSAVerifyWithKey(data, sig []byte, key *rsa.PublicKey, hash crypto.Hash) er
 	h.Write(data)
 	var hashed = h.Sum(nil)
 	return rsa.VerifyPKCS1v15(key, hash, hashed, sig)
+}
+
+func getPublicKeyBytes(publicKey *rsa.PublicKey) ([]byte, error) {
+	pubDer, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	pubBlock := &pem.Block{Type: kPublicKeyType, Bytes: pubDer}
+
+	var pubBuf bytes.Buffer
+	if err = pem.Encode(&pubBuf, pubBlock); err != nil {
+		return nil, err
+	}
+	return pubBuf.Bytes(), nil
+}
+
+func GenRSAKeyWithPKCS1(bits int) (privateKey, publicKey []byte, err error) {
+	priKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return nil, nil, err
+	}
+	priDer := x509.MarshalPKCS1PrivateKey(priKey)
+	priBlock := &pem.Block{Type: kRSAPrivateKeyType, Bytes: priDer}
+
+	var priBuf bytes.Buffer
+	if err = pem.Encode(&priBuf, priBlock); err != nil {
+		return nil, nil, err
+	}
+
+	publicKey, err = getPublicKeyBytes(&priKey.PublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey = priBuf.Bytes()
+	return privateKey, publicKey, err
+}
+
+func GenRSAKeyWithPKCS8(bits int) (privateKey, publicKey []byte, err error) {
+	priKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return nil, nil, err
+	}
+	priDer, err := x509.MarshalPKCS8PrivateKey(priKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	priBlock := &pem.Block{Type: kPrivateKeyType, Bytes: priDer}
+
+	var priBuf bytes.Buffer
+	if err = pem.Encode(&priBuf, priBlock); err != nil {
+		return nil, nil, err
+	}
+
+	publicKey, err = getPublicKeyBytes(&priKey.PublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey = priBuf.Bytes()
+
+	return privateKey, publicKey, err
 }
