@@ -1,4 +1,4 @@
-module github.com/plumos/crypto4go 1.0.3
+module github.com/plumos/crypto4go v1.0.3
 
 go 1.12
 
