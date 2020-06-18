@@ -1,4 +1,4 @@
-module github.com/smartwalle/crypto4go
+module github.com/plumos/crypto4go
 
 go 1.12
 
